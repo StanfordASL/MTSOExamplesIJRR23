@@ -37,6 +37,5 @@ std::vector<Subproblem> partition<NestedConstraint>(const MTSOProblem& problem,
 {
   const NestedConstraint& matroid = problem.getMatroid<NestedConstraint>();
 
-
   return subproblems;
 }
