@@ -68,7 +68,7 @@ std::vector<Subproblem> partition<HeterogeneousConstraint>(const MTSOProblem& pr
   }
 
   std::vector<Subproblem> subproblems;
-  for (const[robot_type, subgraph] & : matroid.subgraphs)
+  for (const auto& [robot_type, subgraph] : matroid.subgraphs)
   {
     if (assigned_types[robot_type] < matroid.K[robot_type])
       subproblems.push_back(Subproblem{subgraph});
@@ -102,24 +102,45 @@ std::vector<Subproblem> partition<RiskConstraint>(const MTSOProblem& problem,
   }
 
   std::vector<Subproblem> subproblems;
-  for (const[risk_threshold, K] & : matroid.subgraphs)
+  for (const auto& [risk_threshold, K] : matroid.risk_constraints)
   {
     if (assigned_risks[risk_threshold] < K)
     {
       subproblems.push_back(Subproblem{problem});
       subproblems.back().setRiskThreshold(risk_threshold);
+      // Returning multiple subproblems is technically fine but inefficient.
+      // We only need to return the subproblem corresponding to the greatest risk threshold,
+      // since this will contain the best solutions in all the other subproblems too
+      break;
     }
   }
   return subproblems;
 }
 
-/// Transversal Matroid: Traffic constraint -- TODO///
+/// Transversal Matroid: Traffic constraint ///
 struct TrafficConstraint
 {
+  // regions are _disjoint_ -- this is not necessary but sufficient for ensuring that all bases
+  // have the same size (e.g. ensures this is a matroid versus a p-system)
+  std::unordered_map<Region, Subgraph> subgraphs;
+  std::unordered_map<Region, size_t> K;
 };
 std::vector<Subproblem> partition<TrafficConstraint>(const MTSOProblem& problem,
                                                   std::vector<SubproblemSolution>& partial_solution,
                                                   const TrafficConstraint& matroid = problem.getMatroid<TrafficConstraint>())
 {
-  //TODO: eta 9/23
+  // Check how many robots we've already assigned to a given region
+  std::unordered_map<Region, size_t> assigned_region;
+  for (const SubproblemSolution& solution : partial_solutions)
+  {
+    assigned_regions[getRegion(solution)]++;
+  }
+
+  std::vector<Subproblem> subproblems;
+  for (const auto& [region, subgraph] : matroid.subgraphs)
+  {
+    if (assigned_regions[region] < matroid.K[region])
+      subproblems.push_back(Subproblem{subgraph});
+  }
+  return subproblems;
 }
